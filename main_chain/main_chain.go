@@ -156,7 +156,7 @@ func UpdateMainChain_sync(conn refDBConnT, from_unit UnitT, last_added_unit Unit
 				arrAllParents = arrParents
 				for i := 0; i < len(arrRetreatingUnits); i++ {
 //					n := arrParents.indexOf(arrRetreatingUnits[i])
-					n := arrRetreatingUnits[i].IndexOf(arrParents)
+					n := arrParents.IndexOf(arrRetreatingUnits[i])
 					if n >= 0 {
 						// :: flattened return for return handleLastUnitProps(rows[n]);
 //						return rows[n]
@@ -390,7 +390,7 @@ func UpdateMainChain_sync(conn refDBConnT, from_unit UnitT, last_added_unit Unit
 //		    			for parent_unit, _ := range storage.assocUnstableUnits[start_unit].parent_units {
 		    			for _, parent_unit := range storage.AssocUnstableUnits[start_unit].Parent_units {
 //		    				if storage.assocUnstableUnits[parent_unit] && storage.assocUnstableUnits[parent_unit].main_chain_index == nil && arrNewStartUnits2.indexOf(parent_unit) == - 1 {
-		    				if unit, _exists := storage.AssocUnstableUnits[parent_unit] ; _exists && unit.Main_chain_index.IsNull() && parent_unit.IndexOf(arrNewStartUnits2) == - 1 {
+		    				if unit, _exists := storage.AssocUnstableUnits[parent_unit] ; _exists && unit.Main_chain_index.IsNull() && arrNewStartUnits2.IndexOf(parent_unit) == - 1 {
 		    					arrNewStartUnits2 = append(arrNewStartUnits2, parent_unit)
 		    				}
 		    			}

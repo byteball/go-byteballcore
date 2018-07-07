@@ -623,7 +623,7 @@ func SaveJoint_sync(objJoint refObjJointT, objValidationState refObjValidationSt
 //		address := row.address
 		address := row.Address
 //		if arrAuthorAddresses.indexOf(address) == - 1 {
-		if address.IndexOf(arrAuthorAddresses) == - 1 {
+		if arrAuthorAddresses.IndexOf(address) == - 1 {
 			_core.Throw("src output address not among authors")
 		}
 		// :: flattened return for handleAddress(address);
@@ -1058,7 +1058,7 @@ func SaveJoint_sync(objJoint refObjJointT, objValidationState refObjValidationSt
 //				address := arrAuthors[i]
 			for _, address := range(arrAuthors) {
 //				if arrWitnesses.indexOf(address) != - 1 && arrCollectedWitnesses.indexOf(address) == - 1 {
-				if address.IndexOf(arrWitnesses) != - 1 && address.IndexOf(arrCollectedWitnesses) == - 1 {
+				if arrWitnesses.IndexOf(address) != - 1 && arrCollectedWitnesses.IndexOf(address) == - 1 {
 					arrCollectedWitnesses = append(arrCollectedWitnesses, address)
 				}
 			}

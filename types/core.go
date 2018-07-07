@@ -20,7 +20,7 @@ const(
 type(
 //	AddressT	= CHashT
 	AddressT	CHashT
-	AddressesT	= []AddressT
+	AddressesT	[]AddressT
 
 	UnitT		HashBase64T
 //	UnitsT		= []UnitT
@@ -346,14 +346,14 @@ func (serno SerialNumberT) OrNull() *SerialNumberT {
 
 //
 
-func (unit UnitT) IndexOf(units UnitsT) int {
+func (units UnitsT) IndexOf(unit UnitT) int {
 	for k, unit_ := range units {
 		if unit_ == unit { return k }
 	}
 	return -1
 }
 
-func (address AddressT) IndexOf(addresses AddressesT) int {
+func (addresses AddressesT) IndexOf(address AddressT) int {
 	for k, address_ := range addresses {
 		if address_ == address { return k }
 	}

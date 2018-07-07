@@ -262,7 +262,7 @@ func determineIfIncluded_sync(conn refDBConnT, earlier_unit UnitT, arrLaterUnits
 //func determineIfIncludedOrEqual_sync(conn DBConnT, earlier_unit UnitT, arrLaterUnits UnitsT) bool {
 func DetermineIfIncludedOrEqual_sync(conn refDBConnT, earlier_unit UnitT, arrLaterUnits UnitsT) bool {
 //	if arrLaterUnits.indexOf(earlier_unit) >= 0 {
-	if earlier_unit.IndexOf(arrLaterUnits) >= 0 {
+	if arrLaterUnits.IndexOf(earlier_unit) >= 0 {
 		// :: flattened return for return handleResult(true);
 		return true
 	}
