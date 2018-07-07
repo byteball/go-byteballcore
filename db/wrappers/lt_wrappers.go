@@ -76,11 +76,10 @@ type Unit struct{ V *types.UnitT }
 
 func (unit *Unit) Scan(src interface{}) error {
 	// [fyi] src = []byte("<unit string>")
-	// [tbd] if (src == nil) ...
-//	if src == nil {
-//		*unit.V = types.UnitT_Null
-//		return nil
-//	}
+	if src == nil {
+		*unit.V = types.UnitT_Null
+		return nil
+	}
 	err := (unit.V).UnmarshalText(src.([]byte))
 	return err
 }

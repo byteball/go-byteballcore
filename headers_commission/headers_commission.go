@@ -363,9 +363,9 @@ func getWinnerInfo(arrChildren ChildsT) refChildT {
 	}
 	// .. not flattening for Array.forEach
 //	for child, _ := range arrChildren {
-	for _, child := range arrChildren {
+	for k, child := range arrChildren {
 //		child.hash = crypto.createHash("sha1").update(child.child_unit + child.next_mc_unit, "utf8").digest("hex")
-		child.Hash = object_hash.SHA1Hex(string(child.Child_unit) + string(child.Next_mc_unit))
+		arrChildren[k].Hash = object_hash.SHA1Hex(string(child.Child_unit) + string(child.Next_mc_unit))
 	}
 	// .. not flattening for Array.sort
 //	arrChildren.sort(func (a aT, b bT) {

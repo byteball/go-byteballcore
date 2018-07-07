@@ -1067,7 +1067,7 @@ func UpdateMainChain_sync(conn refDBConnT, from_unit UnitT, last_added_unit Unit
 			rows := /* await * /
 			conn.query_sync("SELECT unit, is_free FROM units WHERE best_parent_unit IN(?)", DBParamsT{ arrStartUnits })
  **/
-			rcvr := db.UnitPropsReceiver{}
+			rcvr := db.UnitIsFreesReceiver{}
 			queryParams := DBParamsT{}
 			susSql := queryParams.AddUnits(arrStartUnits)
 			conn.MustQuery("SELECT unit, is_free FROM units WHERE best_parent_unit IN(" + susSql + ")", queryParams, &rcvr)

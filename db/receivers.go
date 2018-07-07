@@ -341,6 +341,32 @@ func (rcvr *UnitContentHashsReceiver) Scan(sqlRows *sql.Rows) error {
 
 // [tbd] will not work for all UPR uses - specialize params for each sql stmt
 
+type UnitIsFreesReceiver struct{
+	Rows	[]UnitPropsRow
+}
+
+func (rcvr *UnitIsFreesReceiver) Scan(sqlRows *sql.Rows) error {
+	row := UnitPropsRow{}
+
+	params := []interface{}{
+		&lt.Unit{ &row.Unit },
+		&row.Is_free,
+	}
+
+	err := sqlRows.Scan(params...)
+	if err != nil {
+		return err
+	}
+
+	rcvr.Rows = append(rcvr.Rows, row)
+
+	_log("UnitIsFreesReceiver", "row %#v", row)
+
+	return err
+}
+
+//
+
 type UnitPropsRow struct{
 	Unit		types.UnitT
 	Is_on_main_chain  int

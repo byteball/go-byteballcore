@@ -36,9 +36,11 @@ func GetChash160(obj interface{}) CHash160T {
 	return chash.CHash160([]byte(objSS))
 }
 
-func GetBase64Hash(obj interface{}) HashBase64T {
-	//ss := GetSourceString(obj)
-	panic("[tbd] GetBase64Hash")
+func GetBase64Hash(obj interface{}) refHashBase64T {
+//	panic("[tbd] GetBase64Hash")
+	objSS := GetSourceString(obj)
+	console.Log("objSS %#v", objSS)
+	return HashBase64(objSS)
 }
 
 func GetUnitContentHash(unit UnitT) int {
@@ -141,6 +143,16 @@ func GetSourceString(obj interface{}) string {
 		oss = append(oss, "s", v)
 
 	case []interface{}:
+		oss = append(oss, "[")
+		for _, value := range v {
+			oss = append(oss, GetSourceString(value))
+		}
+		oss = append(oss, "]")
+
+	case AddressT:
+		oss = append(oss, "s", string(v))
+
+	case AddressesT:
 		oss = append(oss, "[")
 		for _, value := range v {
 			oss = append(oss, GetSourceString(value))
