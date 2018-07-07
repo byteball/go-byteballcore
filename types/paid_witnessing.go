@@ -6,7 +6,7 @@ type(
 	PaidWitnessEventT struct{
 		Unit		UnitT
 		Address		AddressT
-		Delay		MCIndexT
+		Delay		DelayT
 	}
 	PaidWitnessEventsT  = []PaidWitnessEventT
 )

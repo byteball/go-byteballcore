@@ -455,7 +455,7 @@ func buildPaidWitnesses_sync(conn refDBConnT, objUnitProps db.UnitContentRow, ar
 			arrValues = append(arrValues, PaidWitnessEventT{
 				unit,
 				address,
-				MCIndexT_Null,
+				DelayT_Null,
 			})
 		}
 	} else {

@@ -146,6 +146,18 @@ func (mcindex *MCIndex) Scan(src interface{}) error {
 	return nil
 }
 
+type Delay struct{ V *types.DelayT }
+
+func (delay *Delay) Scan(src interface{}) error {
+	// [fyi] src = int64(<int value>)
+	if src == nil {
+		*delay.V = types.DelayT_Null
+		return nil
+	}
+	*delay.V = types.DelayT(src.(int64))
+	return nil
+}
+
 /**
 type UUID struct{ V *uuid.UUID }
 

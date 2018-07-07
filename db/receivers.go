@@ -669,7 +669,7 @@ func (rcvr *AddressesReceiver) Scan(sqlRows *sql.Rows) error {
 
 type AddressDelayRow struct{
 	Address		types.AddressT
-	Delay		types.MCIndexT
+	Delay		types.DelayT
 }
 
 type AddressDelaysReceiver struct{
@@ -681,7 +681,7 @@ func (rcvr *AddressDelaysReceiver) Scan(sqlRows *sql.Rows) error {
 
 	params := []interface{}{
 		&lt.Address{ &row.Address },
-		&lt.MCIndex{ &row.Delay },
+		&lt.Delay{ &row.Delay },
 	}
 
 	err := sqlRows.Scan(params...)

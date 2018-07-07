@@ -36,6 +36,8 @@ type(
 	MCIndexT	int
 	MCIndexesT	= []MCIndexT
 
+	DelayT		int
+
 	ContentHashT	= CHashT
 
 //	TimeT		time.Time
@@ -289,6 +291,8 @@ const(
 
 	MCIndexT_Null MCIndexT = MCIndexT(-1)
 
+	DelayT_Null DelayT = DelayT(-1)
+
 	AmountT_Null AmountT = AmountT(-666)
 )
 
@@ -303,6 +307,8 @@ func (address AddressT) IsNull() bool { return len(address) == 0 }
 func (level LevelT) IsNull() bool { return int(level) < 0 }
 
 func (mcindex MCIndexT) IsNull() bool { return int(mcindex) < 0 }
+
+func (delay DelayT) IsNull() bool { return int(delay) < 0 }
 
 // [tbd] verify this
 func (amount AmountT) IsNull() bool { return int(amount) < 0 }
