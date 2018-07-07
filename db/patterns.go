@@ -66,21 +66,13 @@ func (database *Database) Select(sql string, params []interface{}, rcvr Receiver
 
 //
 
-func (conn *DBConnT) Exec (sql string, params []interface{}) (error, *DBQueryResultT) {
-	ctx := conn.ctx
+func (conn *DBConnT) Exec (prep refDBPreparedT, params []interface{}) (error, *DBQueryResultT) {
 
-	//log.Printf("conn.Exec: sql %#v %#v", sql, params)
-/**
-	qry, err := dbconn.PrepareContext(ctx, sql)
+	//log.Printf("conn.Exec: sql %#v %#v", prep.Sql, params)
+
+	res, err := conn.ExecPrepared(prep, params)
 	if err != nil {
-		//log.Printf("conn.Exec.PrepareContext: %s", err.Error())
-		return err
-	}
- **/
-//	res, err := dbconn.ExecContext(ctx, sql, params...)
-	res, err := conn.ExecContext(ctx, sql, params...)
-	if err != nil {
-		log.Printf("conn.Exec.ExecContext: %s", err.Error())
+		log.Printf("conn.ExecPrepared: %s", err.Error())
 		return err, nil
 	}
 
@@ -92,21 +84,13 @@ func (conn *DBConnT) Exec (sql string, params []interface{}) (error, *DBQueryRes
 	return err, &res_
 }
 
-func (conn *DBConnT) Query(sql string, params []interface{}, rcvr Receiver) error {
-	ctx := conn.ctx
+func (conn *DBConnT) Query(prep refDBPreparedT, params []interface{}, rcvr Receiver) error {
 
-	//log.Printf("conn.Query: sql %#v %#v", sql, params)
-/**
-	qry, err := dbconn.PrepareContext(ctx, sql)
+	//log.Printf("conn.Query: sql %#v %#v", prep.Sql, params)
+
+	rows, err := conn.QueryPrepared(prep, params)
 	if err != nil {
-		//log.Printf("conn.Query.PrepareContext: %s", err.Error())
-		return err
-	}
- **/
-//	rows, err := dbconn.QueryContext(ctx, sql, params...)
-	rows, err := conn.QueryContext(ctx, sql, params...)
-	if err != nil {
-		log.Printf("conn.Query.QueryContext: %s", err.Error())
+		log.Printf("conn.QueryPrepared: %s", err.Error())
 		return err
 	}
 	defer rows.Close()

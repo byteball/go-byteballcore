@@ -993,7 +993,7 @@ func initializeMinRetrievableMci()  {
 		"		WHERE units.is_on_main_chain=1 AND units.is_stable=1")
  **/
 	rcvr := db.MinRetrievableMCIsReceiver{}
-	db.MustSelect("SELECT MAX(lb_units.main_chain_index) AS min_retrievable_mci \n" +
+	db.MustQuery("SELECT MAX(lb_units.main_chain_index) AS min_retrievable_mci \n" +
 		"FROM units JOIN units AS lb_units ON units.last_ball_unit=lb_units.unit \n" +
 		"WHERE units.is_on_main_chain=1 AND units.is_stable=1", DBParamsT{}, &rcvr)
 	rows := rcvr.Rows
@@ -1589,7 +1589,7 @@ func initUnstableUnits_sync()  {
 		"		FROM units WHERE is_stable=0 ORDER BY +level")
  **/
 	rcvr := db.RUPUnitPropsReceiver{}
-	db.MustSelect("SELECT unit, level, latest_included_mc_index, main_chain_index, is_on_main_chain, is_free, is_stable, witnessed_level \n" +
+	db.MustQuery("SELECT unit, level, latest_included_mc_index, main_chain_index, is_on_main_chain, is_free, is_stable, witnessed_level \n" +
 		"		FROM units WHERE is_stable=0 ORDER BY +level", DBParamsT{}, &rcvr)
 	rows := rcvr.Rows
 	// << flattened continuation for db.query:1251:1
@@ -1630,7 +1630,7 @@ func initUnstableUnits_sync()  {
 		return len(AssocUnstableUnits)
 	})
 	rcvr_1 := db.ParentChildUnitsReceiver{}
-	db.MustSelect("SELECT parent_unit, child_unit FROM parenthoods WHERE child_unit IN(" + unitsSql + ")", queryParams, &rcvr_1)
+	db.MustQuery("SELECT parent_unit, child_unit FROM parenthoods WHERE child_unit IN(" + unitsSql + ")", queryParams, &rcvr_1)
 	prows := rcvr_1.Rows
 	// << flattened continuation for db.query:1266:3
 	// .. not flattening for Array.forEach

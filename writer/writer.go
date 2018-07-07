@@ -145,6 +145,7 @@ func SaveJoint_sync(objJoint refObjJointT, objValidationState refObjValidationSt
 	db.TakeConnectionFromPool_sync()
 	// << flattened continuation for db.takeConnectionFromPool:24:1
 //	arrQueries := AsyncFunctorsT{}
+	conn.ResetAddedQueries()
 //	conn.AddQuery(arrQueries, "BEGIN")
 	// [fyi] .BeginTransaction is invoked before .ExecuteAddedQueries
 	

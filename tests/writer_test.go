@@ -84,6 +84,15 @@ func getReplayFile(rfn string) []oJoVST {
 	return oJoVSs
 }
 
+func dbStats() {
+	conn := db.TakeConnectionFromPool_sync()
+	defer conn.Release()
+	conn.ShowPrepared()
+}
+
+func showStats() {
+	dbStats()
+}
 
 func redirectOutputToFile(lfn string) {
 	fmt.Printf("log file %s\n", lfn)
@@ -236,6 +245,8 @@ func writerReplay(t *testing.T, tag string) {
 
 		//break
 	}
+
+	showStats()
 
 //	redirectOutputCancel()
 

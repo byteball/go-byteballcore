@@ -47,9 +47,8 @@ type(
 		dbconn	*sql.Conn
 		ctx	context.Context
 		txn	*sql.Tx
-//		ExecContext  func (ctx context.Context, sql string, params... interface{}) (sql.Result, error)
-//		QueryContext  func (ctx context.Context, sql string, params... interface{}) (*sql.Rows, error)
 		querys	DBQuerysT
+		preparedByTag  DBPreparedByTagT
 	}
 	refDBConnT	= *DBConnT
 
@@ -65,8 +64,41 @@ type(
 
 // ---
 
+type(
+	DBConnPoolT struct{
+		items	chan refDBConnT
+//		waiting	util.AtomicCounter
+	}
+
+	refDBConnPoolT	= *DBConnPoolT
+)
+
+func (pool *DBConnPoolT) Put(item refDBConnT) {
+	pool.items <- item
+}
+
+func (pool *DBConnPoolT) Get() refDBConnT {
+	item := <-pool.items
+	return item
+}
+
+func mkDBConnPool(connMin int) refDBConnPoolT {
+	pool := &DBConnPoolT{
+		items: make(chan refDBConnT, connMin),
+	}
+
+        for k := 0; k < connMin; k++ {
+                pool.Put(mkDBConn())
+        }
+
+	return pool
+}
+
+// ---
+
 type Database struct{
-	db *sql.DB
+	db		*sql.DB
+	connPool	refDBConnPoolT
 }
 
 var(
@@ -127,7 +159,8 @@ func (database *Database) init(dbConf Conf) {
 
 	// [fyi] serialize requests
 	// [tbd] database.max_connections
-	db.SetMaxOpenConns(1)
+	max_connections := 1
+	db.SetMaxOpenConns(max_connections)
 
 	if eping := db.Ping(); eping != nil {
 		log.Printf("dsn %#v\n", dsn)
@@ -135,6 +168,8 @@ func (database *Database) init(dbConf Conf) {
 	}
 
 	database.db = db
+
+	database.connPool = mkDBConnPool(max_connections)
 
 	for _, sql := range ([]string{
 		"PRAGMA foreign_keys = 1",
@@ -154,7 +189,7 @@ func (database *Database) init(dbConf Conf) {
 
 // ---
 
-func TakeConnectionFromPool_sync() refDBConnT {
+func mkDBConn() refDBConnT {
 	ctx := context.Background()
 
 	dbconn, err := Instance().db.Conn(ctx)
@@ -167,19 +202,35 @@ func TakeConnectionFromPool_sync() refDBConnT {
 		ctx: ctx,
 //		ExecContext: dbconn.ExecContext,
 //		QueryContext: dbconn.QueryContext,
+		preparedByTag: make(DBPreparedByTagT),
 	}
 	return &conn
 }
 
+// [fyi] must stick to single db connection
+// [fyi] to avoid prepared statements' insanity
+
+func TakeConnectionFromPool_sync() refDBConnT {
+//	return mkDBConn()
+	conn := Instance().connPool.Get()
+	return conn
+}
+
 func (conn *DBConnT) Release() {
-	conn.dbconn.Close()
+//	conn.dbconn.Close()
+	Instance().connPool.Put(conn)
+}
+
+//
+
+func (conn *DBConnT) ResetAddedQueries() {
+	// [tbd] verify this
+	conn.querys = make(DBQuerysT, 0, 99)
 }
 
 func (conn *DBConnT) AddQuery(sql DBSqlT, params DBParamsT) {
 	conn.AddQueryCb(sql, params, nil)
 }
-
-//
 
 func (conn *DBConnT) AddQueryCb(sql DBSqlT, params DBParamsT, cb DBQueryCbT) {
 	query := DBQueryT{
@@ -188,10 +239,6 @@ func (conn *DBConnT) AddQueryCb(sql DBSqlT, params DBParamsT, cb DBQueryCbT) {
 		Cb: cb,
 	}
 	conn.querys = append(conn.querys, query)
-}
-
-func (conn *DBConnT) zzQueries() refDBQuerysT {
-	return &conn.querys
 }
 
 var(
