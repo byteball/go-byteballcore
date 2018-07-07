@@ -45,7 +45,7 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objUnitProp
  **/
 
 
-const Boo = `
+const _compareUnits = `
 func compareUnits(conn DBConnT, unit1 unit1T, unit2 unit2T, handleResult handleResultT)  {
 	if unit1 == unit2 {
 		return handleResult(0)
@@ -272,15 +272,21 @@ func DetermineIfIncludedOrEqual_sync(conn refDBConnT, earlier_unit UnitT, arrLat
 
 
 // excludes earlier unit
+
+type(
+//	ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT = UnitsT
+	ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT = []db.UnitMCISequenceAddressRow
+)
+
 //func readDescendantUnitsByAuthorsBeforeMcIndex_sync(conn DBConnT, objEarlierUnitProps UnitPropsT, arrAuthorAddresses AddressesT, to_main_chain_index MCIndexT) UnitsT {
-func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierUnitProps UnitPropsT, arrAuthorAddresses AddressesT, to_main_chain_index MCIndexT) UnitsT {
+func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierUnitProps UnitPropsT, arrAuthorAddresses AddressesT, to_main_chain_index MCIndexT) ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT {
 	var(
-		goDown_2 func (arrStartUnits UnitsT) UnitsT
+		goDown_2 func (arrStartUnits UnitsT) ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT
 	)
 	
-	arrUnits := UnitsT{}
+	arrUnits := ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT{}
 	
-	goDown_2 = func (arrStartUnits UnitsT) UnitsT {
+	goDown_2 = func (arrStartUnits UnitsT) ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT {
 		profiler.Start()
 /**
 		rows := /* await * /
@@ -296,7 +302,7 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierU
 			to_main_chain_index,
 		})
  **/
-		rcvr := db.UnitAddressesReceiver{}
+		rcvr := db.UnitMCISequenceAddressesReceiver{}
 		queryParams := DBParamsT{}
 		aasSql := queryParams.AddAddresses(arrAuthorAddresses)
 		susSql := queryParams.AddUnits(arrStartUnits)
@@ -304,7 +310,9 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierU
 //			objEarlierUnitProps.main_chain_index,
 			objEarlierUnitProps.Main_chain_index,
 			to_main_chain_index)
-		conn.MustQuery("SELECT units.unit, unit_authors.address AS author_in_list \n" +
+		conn.MustQuery("SELECT units.unit, \n" +
+			"	main_chain_index AS mci, (+sequence='good') AS good, \n" +
+			"	unit_authors.address AS author_in_list \n" +
 			"FROM parenthoods \n" +
 			"JOIN units ON child_unit=units.unit \n" +
 			"LEFT JOIN unit_authors ON unit_authors.unit=units.unit AND address IN(" + aasSql + ") \n" +
@@ -320,7 +328,7 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierU
 //			if objUnitProps.author_in_list {
 			if ! objUnitProps.Address.IsNull() {
 //				arrUnits = append(arrUnits, objUnitProps.unit)
-				arrUnits = append(arrUnits, objUnitProps.Unit)
+				arrUnits = append(arrUnits, objUnitProps)
 			}
 		}
 		profiler.Stop("mc-wc-descendants-goDown")
@@ -348,22 +356,28 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierU
 		arrAuthorAddresses,
 	})
  **/
-	rcvr := db.UnitsReceiver{}
-	queryParams := DBParamsT{
-//		objEarlierUnitProps.main_chain_index,
-		objEarlierUnitProps.Main_chain_index,
-//		objEarlierUnitProps.main_chain_index,
-		objEarlierUnitProps.Main_chain_index,
-		to_main_chain_index,
-		to_main_chain_index,
-	}
-	aasSql := queryParams.AddAddresses(arrAuthorAddresses)
-	conn.MustQuery(// _left_ join forces use of indexes in units
-//	"SELECT unit FROM units " + db.forceIndex("byMcIndex") + " LEFT JOIN unit_authors USING(unit) \n" +
-	"SELECT unit FROM units " + conn.ForceIndex("byMcIndex") + " LEFT JOIN unit_authors USING(unit) \n" +
-		"		WHERE latest_included_mc_index>=? AND main_chain_index>? AND main_chain_index<=? AND latest_included_mc_index<? AND address IN(" + aasSql + ")",
-		queryParams, &rcvr)
+	rcvr := db.UnitMCISequenceAddressesReceiver{}
+	conn.MustQuery("SELECT units.unit, \n" +
+		"	main_chain_index AS mci, (+sequence='good') AS good, \n" +
+		"	unit_authors.address \n" +
+		"FROM units \n" +
+		conn.ForceIndex("byMcIndex") + " \n" +
+		"LEFT JOIN unit_authors USING(unit) \n" +
+		"WHERE main_chain_index BETWEEN (?)+1 AND ? \n" +
+		"	AND latest_included_mc_index BETWEEN ? AND (?)-1 \n", DBParamsT{
+//			objEarlierUnitProps.main_chain_index,
+			objEarlierUnitProps.Main_chain_index,
+			to_main_chain_index,
+//			objEarlierUnitProps.main_chain_index,
+			objEarlierUnitProps.Main_chain_index,
+			to_main_chain_index,
+		}, &rcvr)
 	rows := rcvr.Rows
+	for _, row := range rows {
+		if arrAuthorAddresses.IndexOf(row.Address) == -1 {
+			row.X_skip = true
+		}
+	}
 	// << flattened continuation for conn.query:204:1
 /**
 	arrUnits = // .. not flattening for Array.map
@@ -371,9 +385,10 @@ func ReadDescendantUnitsByAuthorsBeforeMcIndex_sync(conn refDBConnT, objEarlierU
 		return row.unit
 	})
  **/
-	arrUnits = make(UnitsT, 0, len(rows))
+	arrUnits = make(ReadDescendantUnitsByAuthorsBeforeMcIndexReturnT, 0, len(rows))
 	for _, row := range rows {
-		arrUnits = append(arrUnits, row.Unit)
+		if row.X_skip { continue }
+		arrUnits = append(arrUnits, row)
 	}
 	profiler.Stop("mc-wc-descendants-initial")
 //	return goDown_2(UnitsT{ objEarlierUnitProps.unit })

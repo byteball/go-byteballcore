@@ -245,6 +245,42 @@ func (rcvr *UnitAddressesReceiver) Scan(sqlRows *sql.Rows) error {
 
 //
 
+type UnitMCISequenceAddressRow struct{
+	Unit		types.UnitT
+	Main_chain_index  types.MCIndexT
+	Good		bool
+	Address		types.AddressT
+	X_skip		bool
+}
+
+type UnitMCISequenceAddressesReceiver struct{
+	Rows	[]UnitMCISequenceAddressRow
+}
+
+func (rcvr *UnitMCISequenceAddressesReceiver) Scan(sqlRows *sql.Rows) error {
+	row := UnitMCISequenceAddressRow{}
+
+	params := []interface{}{
+		&lt.Unit{ &row.Unit },
+		&lt.MCIndex{ &row.Main_chain_index },
+		&row.Good,
+		&lt.Address{ &row.Address },
+	}
+
+	err := sqlRows.Scan(params...)
+	if err != nil {
+		return err
+	}
+
+	rcvr.Rows = append(rcvr.Rows, row)
+
+	_log("UnitMCISequenceAddressesReceiver", "row %#v", row)
+
+	return err
+}
+
+//
+
 type UnitMCIRow struct{
 	Unit		types.UnitT
 	Main_chain_index  types.MCIndexT

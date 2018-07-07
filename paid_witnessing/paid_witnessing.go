@@ -5,6 +5,7 @@ package paid_witnessing
 
 import(
 	"time"
+	"math"
 
  _core	"nodejs/core"
 	"nodejs/console"
@@ -357,6 +358,11 @@ func readMcUnitWitnesses_sync(conn refDBConnT, main_chain_index MCIndexT) Addres
 var et TimeT
 //rt := {*init:null*}
 var rt time.Duration
+
+type(
+	DelayByAddressMapT = map[AddressT] DelayT
+)
+
 //func buildPaidWitnesses_sync(conn DBConnT, objUnitProps PropsT, arrWitnesses AddressesT)  {
 func buildPaidWitnesses_sync(conn refDBConnT, objUnitProps db.UnitContentRow, arrWitnesses AddressesT)  {
 	var(
@@ -423,19 +429,29 @@ func buildPaidWitnesses_sync(conn refDBConnT, objUnitProps db.UnitContentRow, ar
 		arrWitnesses,
 	})
  **/
-	rcvr := db.AddressDelaysReceiver{}
-	queryParams := DBParamsT{ objUnitProps.Main_chain_index }
-	unitsSql := queryParams.AddUnits(arrUnits)
-	witnessesSql := queryParams.AddAddresses(arrWitnesses)
-	conn.MustQuery(// we don't care if the unit is majority witnessed by the unit-designated witnesses
-	// _left_ join forces use of indexes in units
-	// can't get rid of filtering by address because units can be co-authored by witness with somebody else
-	"SELECT address, MIN(main_chain_index-?) AS delay \n" +
-		"FROM units \n" +
-		"LEFT JOIN unit_authors USING(unit) \n" +
-		"WHERE unit IN(" + unitsSql + ") AND address IN("+ witnessesSql +") AND +sequence='good' \n" +
-		"GROUP BY address", queryParams, &rcvr)
-	rows := rcvr.Rows
+	// [fyi] query is removed entirely as arrUnits returned by graph
+	// [fyi] method just before already contain everything unit-related
+	minDelayByAddress := make(DelayByAddressMapT)
+	for _, objUnit := range arrUnits {
+		if !objUnit.Good { continue }
+		address := objUnit.Address
+		mdba := DelayT(math.MaxInt64)
+		if mdba_, _exists := minDelayByAddress[address]; _exists {
+			mdba = mdba_
+		}
+		delay := DelayT(objUnit.Main_chain_index - objUnitProps.Main_chain_index)
+		if delay < mdba {
+			minDelayByAddress[address] = delay
+		}
+	}
+	rows := make([]db.AddressDelayRow, 0, len(minDelayByAddress))
+	for address, mdba := range minDelayByAddress {
+		if arrWitnesses.IndexOf(address) == -1 { continue }
+		rows = append(rows, db.AddressDelayRow{
+			Address: address,
+			Delay: mdba,
+		})
+	}
 	// << flattened continuation for conn.query:203:2
 //	et += Date.now() - t
 	et.Add(time.Now().Sub(t))
@@ -480,7 +496,7 @@ func buildPaidWitnesses_sync(conn refDBConnT, objUnitProps db.UnitContentRow, ar
 	conn.query_sync("INSERT INTO paid_witness_events_tmp (unit, address, delay) VALUES " + arrValues.join(", "))
  **/
 	{{
-	queryParams = DBParamsT{}
+	queryParams := DBParamsT{}
 	valuesSql := queryParams.AddPaidWitnessEvents(arrValues)
 	conn.MustExec("INSERT INTO paid_witness_events_tmp (unit, address, delay) VALUES " + valuesSql, queryParams)
 	}}
